@@ -1,125 +1,177 @@
-from array import array
-from math import fabs, pi
-from os import pardir, system, write
-from numpy import dot, matmul, piecewise, round, array, linalg
+from numpy import *
 import time
 import itertools
 import csv
+import sympy
 from copy import copy
 
 FILENAME1 = "./Output/cone.csv"
-ROUND = 2
+
+
 def app():
-    N = int(input("Введите количество точек: "))
+    """Основной код программы.
+
+    Ключевые аргументы:
+    start_time -- время выполнения программы.
+    cyclic_curve -- количество элементов циклической кривой.
+    d -- список элементов от 1 до cyclic_curve+1.
+    tmp -- список-копия для преобразований и изменения.
+    x - фиксируемое значение из циклической кривой.
+
+    Используемые функции:
+    arrayCheck(x, tmp) -- Ищет вектор 'C' и потом выполняется функция проверки неравенства.
+                        В функцию передается:
+                            x - какое-то фиксируемое значение с кривой,
+                            tmp - список элементов без x.
+
+    """
+    cyclic_curve = int(input("Введите количество точек: "))
     start_time = time.time()
-    d = list(range(1, N+1))
+    d = list(range(1, cyclic_curve + 1))
     tmp = copy(d)
     with open(FILENAME1, 'w', newline="") as file:
         writer = csv.writer(file)
-        output = ["n","k1","k2","k3","c1","c2","c3","c4", "Cone?"]
+        output = ["n", "k1", "k2", "k3", "c1", "c2", "c3", "c4", "Cone?"]
         writer.writerow(output)
         file.close()
-    # for n in range(0, len(d)):
-    for n in range(0, 1):
+    for n in range(0, len(d)):
+        # for n in range(0, 1):
         x = tmp[n]
         tmp.remove(x)
         arrayCheck(x, tmp)
-        x = 0
         tmp = copy(d)
     print("--- %s seconds ---" % (time.time() - start_time))
 
+
 def arrayCheck(x, tmp):
+    """Функция для поиска вектора 'C = (c1, c2, c3, c4)" и последующая проверка неравества конуса
+
+    Ключевые аргументы:
+    array1 -- список со всеми сочетаниями из tmp по 3.
+    vec_c -- искомый вектор 'C'.
+    output -- строка, выводимая в файл.
+
+    Используемые функции:
+    systemCalc(x, array1[j][0], array1[j][1], array1[j][2]) -- поиск вектора 'C' и запись его в переменную vec_c.
+                        В функцию передается:
+                            x - фиксированное згначение,
+                            array[i][0-2] - значения сочетаний.
+    checkCone(vec_c, x, tmp) -- проверка неравенств конуса для найденого вектора 'C'.
+                        В функцию передается:
+                            vec_c - вектор 'C',
+                            x - фиксированное значение,
+                            tmp - список чисел от 1 до cyclic_curve+1 без x.
+    """
     array1 = list(itertools.combinations(tmp, 3))
-    tmp2 = list(tmp)
     for j in range(0, len(array1)):
-        C = systemCalc(x, array1[j][0], array1[j][1], array1[j][2])
-        tmp2.remove(array1[j][0])
-        tmp2.remove(array1[j][1])
-        tmp2.remove(array1[j][2])
-        if checkCone(C, x, tmp2) == True:
-            output = [x, array1[j][0], array1[j][1], array1[j][2], round(C[0],ROUND), round(C[1],ROUND), round(C[2],ROUND), round(C[3],ROUND), "+"]
-            tmp2 = list(tmp)
-        else:
-            output = [x, array1[j][0], array1[j][1], array1[j][2], round(C[0],ROUND), round(C[1],ROUND), round(C[2],ROUND), round(C[3],ROUND), "-"]
-            tmp2 = list(tmp)
-        with open(FILENAME1, "a", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerow(output)
+        vec_c = systemCalc(x, array1[j][0], array1[j][1], array1[j][2])
+        if checkCone(vec_c, x, tmp):
+            output = [x, array1[j][0], array1[j][1], array1[j][2], vec_c[0], vec_c[1], vec_c[2], vec_c[3], "+"]
+            with open(FILENAME1, "a", newline="") as file:
+                writer = csv.writer(file)
+                writer.writerow(output)
+        # else:
+        # output = [x, array1[j][0], array1[j][1], array1[j][2], vec_c[0], vec_c[1], vec_c[2], vec_c[3], "-"]
+        # with open(FILENAME1, "a", newline="") as file:
+        #     writer = csv.writer(file)
+        #     writer.writerow(output)
 
-# return C = (c1, c2, c3, c4)
+
 def systemCalc(n, k1, k2, k3):
-    #! print(n, k1, k2, k3)
-    A1 = float(n + k1)
-    A2 = float(n + k2)
-    A3 = float(n + k3)
-    
-    B1 = float(pow(n,2) + n*k1 + pow(k1,2))
-    B2 = float(pow(n,2) + n*k2 + pow(k2,2))
-    B3 = float(pow(n,2) + n*k3 + pow(k3,2))   
+    """Поиск вектора 'C' и запись его значений в list_vec_c
 
-    C1 = float((n+k1) * (pow(n,2) + pow(k1,2)))
-    C2 = float((n+k2) * (pow(n,2) + pow(k2,2)))
-    C3 = float((n+k3) * (pow(n,2) + pow(k3,2)))
-    # print(1.0, A1, B1, C1)
-    # print(1.0, A2, B2, C2)
-    # print(1.0, A3, B3, C3)
-    M1 = array([[1., A1, B1, C1], [1., A2, B2, C2], [1., A3, B3, C3], [1., 1., 1., 1.]])
-    # print(M1)
-    v1 = array([0.,0.,0.,100.])
-    # print(v1)
+    Решение системы линейных уравнений (c,xn)-(c,xk) = 0, где:
+                (c,xn) -- скалярное произведение: c1*n + c2*n^2 + c3*n^3 + c4*n^4,
+                (c, xk) -- скалярное произведение: c1*k + c2*k^2 + c3*k^3 + c4*k^4.
+                Раскрывая скобки (c,xn)-(c,xk)=0 и сокращая на (n-k) мы получаем уравнение:
+                    c1 + c2(n+k) + c3(n^2 + n*k + k^2) + c4((n+k)(n^2 + k^2)) = 0.
+    Решаем СЛАУ (Ax = b) передав вектор b в функцию LUsolve матрицы A
+
+    Ключевые аргументы:
+    a_(1-3) -- (n+k) для k(1-3),
+    b_(1-3) -- (n^2 + n*k + k^2) для k(1-3),
+    c_(1-3) -- ((n+k)(n^2 + k^2)) для k(1-3),
+    matrix1 -- Матрица коэффициентов при c1, c2, c3, c4. Матрица А из (Ax = b),
+    v1 -- Вектор значений b из (Ax = b),
+    vec_c -- Вектор решений СЛАУ x из (Ax = b),
+    c(1-4) -- 4 значения из vec_c,
+    list_vec_c -- список со значениями c1, c2, c3, c4.
+
+    Используемые функции:
+    vec_c = matrix1.LUsolve(v1) -- решение матричной системы (matrix1 * vec_c = v1) из библиотеки sympy.
+
+    """
+    # print("")
+    # print(n, k1, k2, k3)
+    a_1 = (n + k1)
+    a_2 = (n + k2)
+    a_3 = (n + k3)
+
+    b_1 = (pow(n, 2) + (n * k1) + pow(k1, 2))
+    b_2 = (pow(n, 2) + (n * k2) + pow(k2, 2))
+    b_3 = (pow(n, 2) + (n * k3) + pow(k3, 2))
+
+    c_1 = ((n + k1) * (pow(n, 2) + pow(k1, 2)))
+    c_2 = ((n + k2) * (pow(n, 2) + pow(k2, 2)))
+    c_3 = ((n + k3) * (pow(n, 2) + pow(k3, 2)))
+    # print(1.0, a_1, b_1, c_1)
+    # print(1.0, a_2, b_2, c_2)
+    # print(1.0, a_3, b_3, c_3)
+    matrix1 = sympy.Matrix([[1, a_1, b_1, c_1], [1, a_2, b_2, c_2], [1, a_3, b_3, c_3], [1, 1, 1, 1]])
+    v1 = sympy.Matrix(4, 1, [0, 0, 0, 100])
     try:
-        C = linalg.solve(M1, v1)
-        #! print (C)
-        # for i in range(0, len(C)):
-        #     C[i] = round(C[i], ROUND)
-        return C
+        vec_c = matrix1.LUsolve(v1)
+        c1 = vec_c[0]
+        c2 = vec_c[1]
+        c3 = vec_c[2]
+        c4 = vec_c[3]
+
+        list_vec_c = list([c1, c2, c3, c4])
+        # print("1:", (c1 + c2 * a_1 + c3 * b_1 + c4 * c_1))
+        # print("2:", (c1 + c2 * a_2 + c3 * b_2 + c4 * c_2))
+        # print("3:", (c1 + c2 * a_3 + c3 * b_3 + c4 * c_3))
+        # print("4:", (c1+c2+c3+c4))
+        return list_vec_c
     except linalg.LinAlgError:
-        print("Непоходящие числа")
+        print("Неподходящие числа")
 
-# check (c, xn) >= (c, xk)?   
-def checkCone(C, n, k):      
+
+def checkCone(vec_c, n, k):
+    """Проверка всех скалярных произведений конуса для k (от 1 до cyclic_curve без x).
+
+    Просматривает все скалярные произведения вида: c1 + c2(n+k) + c3(n^2 + n*k + k^2) + c4((n+k)(n^2 + k^2)) = 0.
+    Возвращает True или False.
+
+    Ключевые аргументы:
+    c(1-4) -- значения вектора 'C', передаваемого в эту функцию,
+    alpha -- (n+k) из скалярного произведения для фиксированного n и всех k из списка,
+    beta -- (n^2 + n*k + k^2) из скалярного произведения для фиксированного n и всех k из списка,
+    gamma -- ((n+k)(n^2 + k^2)) из скалярного произведения для фиксированного n и всех k из списка,
+    lc -- проверяемое неравенство (c,xn)-(c,xk) >= 0:
+                    lc = c1 + c2*alpha + c3*beta + c4*gamma,
+                    неравенство проверятся для всех k из передаваемого списка.
+    """
     check = True
-    # print(n, C)
-    n = float(n + 0.0)
+    c1 = vec_c[0]
+    c2 = vec_c[1]
+    c3 = vec_c[2]
+    c4 = vec_c[3]
+    # print("c1:", c1, "c2:", c2, "c3:", c3, "c4:", c4)
     for i in range(0, len(k)):
-        k[i] = float(k[i] + 0.0)
-    check = 0
-    for i in range(0, len(k)):
-        lc = 0   
-        # rc = 0 
+        alpha = n + k[i]
+        beta = (n * n) + (n * k[i]) + (k[i] * k[i])
+        gamma = (n + k[i]) * (n * n + k[i] * k[i])
 
-        # print("i:", i, "k:", k[i])
-        # c1 = (round(C[0],ROUND))
-        c1 = C[0]
-        c2 = C[1]
-        c3 = C[2]
-        c4 = C[3]
-        # c2 = (round(C[1],ROUND))
-        # c3 = (round(C[2],ROUND))
-        # c4 = (round(C[3],ROUND))
-
-        A1 = float(n + k[i])
-        B1 = float(pow(n,2) + n*k[i] + pow(k[i], 2))
-        C1 = float(n+k[i])*(pow(n,2) + pow(k[i],2))
-
-        # lc = (c1 + c2*(n+k[i]) + c3*(pow(n,2) + n*k[i] + pow(k[i], 2)) + c4*(n+k[i])*(pow(n,2) + pow(k[i],2)))  
-        lc = c1 + c2*A1 + c3*B1 + c4*C1
-        
-        # lc = c1*n + c2*pow(n,2) + c3*pow(n,3) + c4*pow(n,4)
-        # rc = c1*k[i] + c2*pow(k[i], 2) + c3*pow(k[i], 3) + c4*pow(k[i],4)  
-        
-        # print(round(lc, ROUND), ">=", 0.0) 
-        #! print("k:", k[i], ";", lc, ">=", 0.0) 
-        # print("k:", k[i], ";", lc, ">=", rc)
+        lc = c1 + (c2 * alpha) + (c3 * beta) + (c4 * gamma)
+        # print("k:", k[i], ";", lc, ">=", 0)
         if lc >= 0:
-        # if lc >= rc:     
             check = True
         else:
-            check = False
-            return False           
-    if check == True:
+            return False
+    if check:
         return True
-    else: 
+    else:
         return False
+
 
 app()
