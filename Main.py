@@ -31,11 +31,12 @@ def app():
     tmp = copy(d)
     with open(FILENAME1, 'w', newline="") as file:
         writer = csv.writer(file)
-        output = ["n", "k1", "k2", "k3", "c1", "c2", "c3", "c4", "Cone?"]
+        # output = ["n", "k1", "k2", "k3", "c1", "c2", "c3", "c4", "Cone?"]
+        output = ["n", "k1", "k2", "k3", "c1", "c2", "c3", "c4"]
         writer.writerow(output)
         file.close()
     for n in range(0, len(d)):
-        # for n in range(0, 1):
+    # for n in range(0, 1):
         x = tmp[n]
         tmp.remove(x)
         arrayCheck(x, tmp)
@@ -47,12 +48,12 @@ def arrayCheck(x, tmp):
     """Функция для поиска вектора 'C = (c1, c2, c3, c4)" и последующая проверка неравества конуса
 
     Ключевые аргументы:
-    array1 -- список со всеми сочетаниями из tmp по 3.
+    arrayList -- список со всеми сочетаниями из tmp по 3.
     vec_c -- искомый вектор 'C'.
     output -- строка, выводимая в файл.
 
     Используемые функции:
-    systemCalc(x, array1[j][0], array1[j][1], array1[j][2]) -- поиск вектора 'C' и запись его в переменную vec_c.
+    systemCalc(x, arrayList[j][0], arrayList[j][1], arrayList[j][2]) -- поиск вектора 'C' и запись его в переменную vec_c.
                         В функцию передается:
                             x - фиксированное згначение,
                             array[i][0-2] - значения сочетаний.
@@ -61,20 +62,22 @@ def arrayCheck(x, tmp):
                             vec_c - вектор 'C',
                             x - фиксированное значение,
                             tmp - список чисел от 1 до cyclic_curve+1 без x.
+    itertools.combinations(tmp, 3) -- возвращает список всех сочетаний из списка tmp по 3 элемента.
     """
-    array1 = list(itertools.combinations(tmp, 3))
-    for j in range(0, len(array1)):
-        vec_c = systemCalc(x, array1[j][0], array1[j][1], array1[j][2])
-        if checkCone(vec_c, x, tmp):
-            output = [x, array1[j][0], array1[j][1], array1[j][2], vec_c[0], vec_c[1], vec_c[2], vec_c[3], "+"]
+    arrayList = list(itertools.combinations(tmp, 3))
+    for j in range(0, len(arrayList)):
+        vec_c = systemCalc(x, arrayList[j][0], arrayList[j][1], arrayList[j][2])
+        if checkCone(vec_c, x, tmp) == True:
+            # output = [x, arrayList[j][0], arrayList[j][1], arrayList[j][2], vec_c[0], vec_c[1], vec_c[2], vec_c[3], "+"]
+            output = [x, arrayList[j][0], arrayList[j][1], arrayList[j][2], vec_c[0], vec_c[1], vec_c[2], vec_c[3]]
             with open(FILENAME1, "a", newline="") as file:
                 writer = csv.writer(file)
                 writer.writerow(output)
         # else:
-        # output = [x, array1[j][0], array1[j][1], array1[j][2], vec_c[0], vec_c[1], vec_c[2], vec_c[3], "-"]
-        # with open(FILENAME1, "a", newline="") as file:
-        #     writer = csv.writer(file)
-        #     writer.writerow(output)
+        #     output = [x, arrayList[j][0], arrayList[j][1], arrayList[j][2], vec_c[0], vec_c[1], vec_c[2], vec_c[3], "-"]
+        #     with open(FILENAME1, "a", newline="") as file:
+        #         writer = csv.writer(file)
+        #         writer.writerow(output)
 
 
 def systemCalc(n, k1, k2, k3):
@@ -101,8 +104,8 @@ def systemCalc(n, k1, k2, k3):
     vec_c = matrix1.LUsolve(v1) -- решение матричной системы (matrix1 * vec_c = v1) из библиотеки sympy.
 
     """
-    # print("")
-    # print(n, k1, k2, k3)
+    print("")
+    print(n, k1, k2, k3)
     a_1 = (n + k1)
     a_2 = (n + k2)
     a_3 = (n + k3)
@@ -118,6 +121,7 @@ def systemCalc(n, k1, k2, k3):
     # print(1.0, a_2, b_2, c_2)
     # print(1.0, a_3, b_3, c_3)
     matrix1 = sympy.Matrix([[1, a_1, b_1, c_1], [1, a_2, b_2, c_2], [1, a_3, b_3, c_3], [1, 1, 1, 1]])
+
     v1 = sympy.Matrix(4, 1, [0, 0, 0, 100])
     try:
         vec_c = matrix1.LUsolve(v1)
@@ -156,15 +160,27 @@ def checkCone(vec_c, n, k):
     c2 = vec_c[1]
     c3 = vec_c[2]
     c4 = vec_c[3]
-    # print("c1:", c1, "c2:", c2, "c3:", c3, "c4:", c4)
+    print("c1:", c1, "c2:", c2, "c3:", c3, "c4:", c4)
     for i in range(0, len(k)):
-        alpha = n + k[i]
-        beta = (n * n) + (n * k[i]) + (k[i] * k[i])
-        gamma = (n + k[i]) * (n * n + k[i] * k[i])
+        # alpha = n + k[i]
+        # beta = (pow(n, 2)) + (n * k[i]) + (pow(k[i], 2))
+        # gamma = (n + k[i]) * (pow(n, 2) + pow(k[i], 2))
+        # lc = c1 + (c2 * alpha) + (c3 * beta) + (c4 * gamma)
 
-        lc = c1 + (c2 * alpha) + (c3 * beta) + (c4 * gamma)
+        # a1 = n - k[i]
+        # a2 = pow(n, 2) - pow(k[i], 2)
+        # a3 = pow(n, 3) - pow(k[i], 3)
+        # a4 = pow(n, 4) - pow(k[i], 4)
+        # lc = c1*a1 + c2*a2 + c3*a3 + c4*a4
+
+        lc = c1*pow(n, 1) + c2*pow(n, 2) + c3*pow(n, 3) + c4*pow(n, 4)
+        rc = c1*pow(k[i], 1) + c2*pow(k[i], 2) + c3*pow(k[i], 3) + c4*pow(k[i], 4)
+        print("k:", k[i], ";", lc, ">=", rc)
+        if lc >= rc:
+
+        # lc = c1*(n - k[i]) + c2*(pow(n, 2) - pow(k[i], 2)) + c3*(pow(n, 3) - pow(k[i], 3)) + c4*(pow(n, 4) - pow(k[i], 4))
         # print("k:", k[i], ";", lc, ">=", 0)
-        if lc >= 0:
+        # if lc >= 0:
             check = True
         else:
             return False
